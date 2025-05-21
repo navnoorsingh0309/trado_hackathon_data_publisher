@@ -62,6 +62,25 @@ export function processMessage(
     // ltpValues now contains the decoded LTP values
     for (const ltp of ltpValues) {
       // Process the LTP value
+      let indexName = undefined,
+        currentAtm = undefined;
+      // If index topic
+      if (subscriptionManager.isFirstIndexMessage.get(topic) === true) {
+        const parts = topic.split("/");
+        indexName = parts[1];
+        const prevLtp = indexLtpMap.get(indexName);
+        // Optimize our tasks
+        if (prevLtp !== ltp) {
+          indexLtpMap.set(indexName, ltp);
+          const prevAtm = atmStrikeMap.get(indexName);
+          // To avoid redundent subscriptions
+          currentAtm = utils.getAtmStrike(indexName, ltp);
+          if (prevAtm !== currentAtm) {
+            atmStrikeMap.set(indexName, currentAtm);
+            subscriptionManager.subscribeToAtmOptions(client, indexName, currentAtm);
+          }
+        }
+      }
     }
   } catch (error) {
     console.error("Error processing message:", error);
