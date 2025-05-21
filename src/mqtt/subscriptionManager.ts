@@ -63,8 +63,19 @@ export async function getOptionToken(
     const url = `https://api.trado.trade/token?index=${indexName}&expiryDate=${expiryDate}&optionType=${optionType}&strikePrice=${strikePrice}`;
 
     // TODO: Fetch from API and return token
-
-    return null; // Placeholder
+    const response = await fetch(url);
+    if (!response.ok) {
+      console.log("Error while fetching from api");
+      return null;
+    }
+    const data = await response.json();
+    if (data.data.token) return data.data.token;
+    else {
+      console.error(
+        `Token not found in API response for ${indexName} ${strikePrice} ${optionType}`
+      );
+      return null;
+    }
   } catch (error) {
     console.error(
       `Error fetching token for ${indexName} ${strikePrice} ${optionType}:`,
