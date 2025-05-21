@@ -46,6 +46,39 @@ export async function subscribeToAtmOptions(
   }
 
   // TODO: Subscribe to options
+  for (const strike of strikes) {
+    if (strike <= 0) continue; // ignore invalid strikes
+
+    // Fetch tokens for CE and PE
+    const [ceToken, peToken] = await Promise.all([
+      getOptionToken(indexName, strike, "ce"),
+      getOptionToken(indexName, strike, "pe"),
+    ]);
+
+    if (ceToken) {
+      const optionTopic = utils.getOptionTopic(indexName, ceToken);
+      client.subscribe(optionTopic, (err) => {
+        if (err) {
+          console.error(
+            `Failed to subscribe to CE option token ${ceToken} and indexName ${indexName}`,
+            err
+          );
+        }
+      });
+    }
+
+    if (peToken) {
+      const optionTopic = utils.getOptionTopic(indexName, peToken);
+      client.subscribe(optionTopic, (err) => {
+        if (err) {
+          console.error(
+            `Failed to subscribe to PE option token ${peToken}`,
+            err
+          );
+        }
+      });
+    }
+  }
 }
 
 // Fetch option token from API
