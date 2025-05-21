@@ -65,6 +65,7 @@ export async function getTopicId(
     );
 
     if (res.rows.length > 0) {
+      topicCache.set(topicName, res.rows[0].topic_id);
       return res.rows[0].topic_id;
     }
   } catch (err) {
