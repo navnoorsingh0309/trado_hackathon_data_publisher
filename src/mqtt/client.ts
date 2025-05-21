@@ -6,7 +6,8 @@ export function createClient(): mqtt.MqttClient {
   // 1. Create MQTT client using configuration
   // 2. Return the client
 
-  const connectUrl = `mqtt://${config.mqtt.host}:${config.mqtt.port}`;
+  // Changes: MQTT over TLS worked here
+  const connectUrl = `mqtts://${config.mqtt.host}:${config.mqtt.port}`;
 
   const options: mqtt.IClientOptions = {
     clientId: config.mqtt.clientId,
