@@ -106,12 +106,57 @@ export function saveToDatabase(
 export async function flushBatch() {
   // TODO: Implement this function
   // 1. Clear timer
+  if (batchTimer) {
+    clearTimeout(batchTimer);
+    batchTimer = null;
+  }
   // 2. If batch is empty, return
+  if (dataBatch.length === 0) return;
+  const batchToProcess = [...dataBatch];
+  // Reseting batch initially to process more data in events
+  dataBatch = [];
   // 3. Process batch items (get topic IDs)
+  const topicIdMap = new Map<string, number>();
+  for (const item of batchToProcess) {
+    if (!topicIdMap.has(item.topic)) {
+      const topicId = await getTopicId(
+        item.topic,
+        item.indexName,
+        item.type,
+        item.strike
+      );
+      topicIdMap.set(item.topic, topicId);
+    }
+  }
   // 4. Insert data in a transaction
-  // 5. Reset batch
+  // Begin transaction
+  let client;
+  try {
+    client = await pool.connect();
+    await client.query("BEGIN");
 
-  console.log("Flushing batch to database");
+    // Insert LTP values into quotes table (or similar)
+    for (const item of batchToProcess) {
+      const topicId = topicIdMap.get(item.topic)!;
+      await client.query(
+        `INSERT INTO ltp_data (topic_id, ltp, received_at)
+       VALUES ($1, $2, NOW())`,
+        [topicId, item.ltp]
+      );
+    }
+
+    await client.query("COMMIT");
+  } catch (err) {
+    if (client) {
+      await client.query("ROLLBACK");
+    }
+    console.error("Transaction failed:", err);
+  } finally {
+    if (client) {
+      client.release();
+    }
+  }
+  console.log(`Flushing batch of ${batchToProcess.length} items`);
 }
 
 export async function cleanupDatabase() {
