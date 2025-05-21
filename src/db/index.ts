@@ -97,8 +97,21 @@ export function saveToDatabase(
 ) {
   // TODO: Implement this function
   // 1. Add item to batch
+  dataBatch.push({
+    topic,
+    ltp,
+    indexName,
+    type,
+    strike,
+  });
   // 2. If batch timer is not running, start it
+  if (!batchTimer) {
+    batchTimer = setTimeout(() => {
+      flushBatch();
+    }, config.app.batchInterval);
+  }
   // 3. If batch size reaches threshold, flush batch
+  if (dataBatch.length >= config.app.batchSize) flushBatch();
 
   console.log(`Saving to database: ${topic}, LTP: ${ltp}`);
 }
