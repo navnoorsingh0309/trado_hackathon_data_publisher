@@ -1,12 +1,13 @@
 import mqtt from "mqtt";
 import * as marketdata from "../proto/market_data_pb";
-import * as subscriptionManager from "./subscriptionManager";
-import * as db from "../db";
-import * as utils from "../utils";
+import { subscribeToAtmOptions } from "./subscriptionManager";
+import { getAtmStrike } from "../utils";
+import { saveToDatabase } from "../db";
 
 // Store LTP values for indices
 const indexLtpMap = new Map<string, number>();
 const atmStrikeMap = new Map<string, number>();
+const indices = ["NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY"];
 
 export function processMessage(
   topic: string,
@@ -18,8 +19,6 @@ export function processMessage(
     // 1. Parse the message (it's likely in JSON format)
     // 2. Extract LTP value
     // 3. If it's an index topic, calculate ATM and subscribe to options (This is one time operation only)
-    // 4. Save data to database
-
     // Decoding logic
     let decoded: any = null;
     let ltpValues: number[] = [];
@@ -64,8 +63,7 @@ export function processMessage(
       // Process the LTP value
       let indexName = undefined,
         currentAtm = undefined;
-      // If index topic
-      if (subscriptionManager.isFirstIndexMessage.get(topic) === true) {
+      if (indices.some((index) => topic.includes(index))) {
         const parts = topic.split("/");
         indexName = parts[1];
         const prevLtp = indexLtpMap.get(indexName);
@@ -74,13 +72,16 @@ export function processMessage(
           indexLtpMap.set(indexName, ltp);
           const prevAtm = atmStrikeMap.get(indexName);
           // To avoid redundent subscriptions
-          currentAtm = utils.getAtmStrike(indexName, ltp);
+          currentAtm = getAtmStrike(indexName, ltp);
           if (prevAtm !== currentAtm) {
             atmStrikeMap.set(indexName, currentAtm);
-            subscriptionManager.subscribeToAtmOptions(client, indexName, currentAtm);
+            subscribeToAtmOptions(client, indexName, currentAtm);
           }
         }
       }
+
+      // 4. Save data to database
+      saveToDatabase(topic, ltp, indexName, undefined, currentAtm);
     }
   } catch (error) {
     console.error("Error processing message:", error);

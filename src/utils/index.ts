@@ -26,5 +26,5 @@ export function getAtmStrike(indexName: string, ltp: number): number {
 
 // Format option topic for subscription
 export function getOptionTopic(indexName: string, tokenNumber: string): string {
-  return `NSE_FO|${tokenNumber}`;
+  return `index/NSE_FO|${tokenNumber}`;
 }

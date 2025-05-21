@@ -12,7 +12,6 @@ export const isFirstIndexMessage = new Map<string, boolean>();
 export function subscribeToAllIndices(client: mqtt.MqttClient) {
   INDICES.forEach((indexName) => {
     const topic = `${config.app.indexPrefix}/${indexName}`;
-    console.log(`Subscribing to index: ${topic}`);
     client.subscribe(topic);
     activeSubscriptions.add(topic);
   });
@@ -35,9 +34,6 @@ export async function subscribeToAtmOptions(
   // 1. Calculate strike prices around ATM
   // 2. For each strike, get option tokens for CE and PE
   // 3. Subscribe to corresponding topics
-
-  console.log(`Subscribing to ${indexName} options around ATM ${atmStrike}`);
-
   const strikeDiff = utils.getStrikeDiff(indexName);
   const strikes = [];
 

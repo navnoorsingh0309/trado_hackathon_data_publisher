@@ -112,8 +112,6 @@ export function saveToDatabase(
   }
   // 3. If batch size reaches threshold, flush batch
   if (dataBatch.length >= config.app.batchSize) flushBatch();
-
-  console.log(`Saving to database: ${topic}, LTP: ${ltp}`);
 }
 
 export async function flushBatch() {
@@ -169,7 +167,7 @@ export async function flushBatch() {
       client.release();
     }
   }
-  console.log(`Flushing batch of ${batchToProcess.length} items`);
+  console.log(`Processed batch of ${batchToProcess.length} items`);
 }
 
 export async function cleanupDatabase() {
