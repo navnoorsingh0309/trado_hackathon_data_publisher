@@ -8,6 +8,9 @@ export const activeSubscriptions = new Set<string>();
 // Track if we've received the first message for each index
 export const isFirstIndexMessage = new Map<string, boolean>();
 
+// To map type for option be it CE and PE
+export const topicTypeMapping = new Map<string, string>();
+
 // Subscribe to all index topics
 export function subscribeToAllIndices(client: mqtt.MqttClient) {
   INDICES.forEach((indexName) => {
@@ -50,32 +53,36 @@ export async function subscribeToAtmOptions(
       getOptionToken(indexName, strike, "ce"),
       getOptionToken(indexName, strike, "pe"),
     ]);
-    let optionTopic = utils.getOptionTopic(indexName, ceToken!);
+
     // Avoiding redundancy
-    if (ceToken && !activeSubscriptions.has(optionTopic)) {
-      client.subscribe(optionTopic, (err) => {
+    let CEOptionTopic = utils.getOptionTopic(indexName, ceToken!);
+    if (ceToken && !activeSubscriptions.has(CEOptionTopic)) {
+      client.subscribe(CEOptionTopic, (err) => {
         if (err) {
           console.error(
             `Failed to subscribe to CE option token ${ceToken} and indexName ${indexName}`,
             err
           );
         } else {
-          activeSubscriptions.add(optionTopic);
+          activeSubscriptions.add(CEOptionTopic);
+          topicTypeMapping.set(CEOptionTopic, "CE");
+          console.log(`Added ${CEOptionTopic} for CE`)
         }
       });
     }
-    optionTopic = utils.getOptionTopic(indexName, peToken!);
     // Avoiding redundancy
-    if (peToken && !activeSubscriptions.has(optionTopic)) {
-      const optionTopic = utils.getOptionTopic(indexName, peToken);
-      client.subscribe(optionTopic, (err) => {
+    let PEOptionTopic = utils.getOptionTopic(indexName, peToken!);
+    if (peToken && !activeSubscriptions.has(PEOptionTopic)) {
+      client.subscribe(utils.getOptionTopic(indexName, peToken), (err) => {
         if (err) {
           console.error(
             `Failed to subscribe to PE option token ${peToken}`,
             err
           );
         } else {
-          activeSubscriptions.add(optionTopic);
+          activeSubscriptions.add(PEOptionTopic);
+          topicTypeMapping.set(PEOptionTopic, "PE");
+          console.log(`Added ${PEOptionTopic} for PE`)
         }
       });
     }

@@ -1,6 +1,6 @@
 import mqtt from "mqtt";
 import * as marketdata from "../proto/market_data_pb";
-import { subscribeToAtmOptions } from "./subscriptionManager";
+import { subscribeToAtmOptions, topicTypeMapping } from "./subscriptionManager";
 import { getAtmStrike } from "../utils";
 import { saveToDatabase } from "../db";
 
@@ -46,6 +46,7 @@ export function processMessage(
         // Try decoding as JSON
         try {
           decoded = JSON.parse(message.toString());
+          console.log(decoded);
           if (decoded && typeof decoded.ltp === "number") {
             ltpValues.push(decoded.ltp);
           }
@@ -81,7 +82,11 @@ export function processMessage(
       }
 
       // 4. Save data to database
-      saveToDatabase(topic, ltp, indexName, undefined, currentAtm);
+      if (!topicTypeMapping.has(topic))
+        saveToDatabase(topic, ltp, indexName, undefined, currentAtm);
+      else
+        // For specifying type
+        saveToDatabase(topic, ltp, indexName, topicTypeMapping.get(topic), currentAtm);
     }
   } catch (error) {
     console.error("Error processing message:", error);
