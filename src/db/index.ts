@@ -54,11 +54,38 @@ export async function getTopicId(
 ): Promise<number> {
   // TODO: Implement this function
   // 1. Check if topic exists in cache
+  if (topicCache.get(topicName)) {
+    return topicCache.get(topicName)!;
+  }
   // 2. If not in cache, check if it exists in database
+  try {
+    const res = await pool.query(
+      "SELECT topic_id FROM topics WHERE topic_name = $1",
+      [topicName]
+    );
+
+    if (res.rows.length > 0) {
+      return res.rows[0].topic_id;
+    }
+  } catch (err) {
+    console.error("Error checking topic existence:", err);
+    throw err;
+  }
   // 3. If not in database, insert it
   // 4. Return topic_id
-
-  return 0; // Placeholder
+  try {
+    const insertRes = await pool.query(
+      `INSERT INTO topics (topic_name, index_name, type, strike)
+     VALUES ($1, $2, $3, $4)
+     RETURNING topic_id`,
+      [topicName, indexName, type, strike]
+    );
+    topicCache.set(topicName, insertRes.rows[0].topic_id);
+    return insertRes.rows[0].topic_id;
+  } catch (err) {
+    console.error("Error inserting topic:", err);
+    throw err;
+  }
 }
 
 export function saveToDatabase(
