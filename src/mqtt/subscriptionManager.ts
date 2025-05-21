@@ -50,20 +50,23 @@ export async function subscribeToAtmOptions(
       getOptionToken(indexName, strike, "ce"),
       getOptionToken(indexName, strike, "pe"),
     ]);
-
-    if (ceToken) {
-      const optionTopic = utils.getOptionTopic(indexName, ceToken);
+    let optionTopic = utils.getOptionTopic(indexName, ceToken!);
+    // Avoiding redundancy
+    if (ceToken && !activeSubscriptions.has(optionTopic)) {
       client.subscribe(optionTopic, (err) => {
         if (err) {
           console.error(
             `Failed to subscribe to CE option token ${ceToken} and indexName ${indexName}`,
             err
           );
+        } else {
+          activeSubscriptions.add(optionTopic);
         }
       });
     }
-
-    if (peToken) {
+    optionTopic = utils.getOptionTopic(indexName, peToken!);
+    // Avoiding redundancy
+    if (peToken && !activeSubscriptions.has(optionTopic)) {
       const optionTopic = utils.getOptionTopic(indexName, peToken);
       client.subscribe(optionTopic, (err) => {
         if (err) {
@@ -71,6 +74,8 @@ export async function subscribeToAtmOptions(
             `Failed to subscribe to PE option token ${peToken}`,
             err
           );
+        } else {
+          activeSubscriptions.add(optionTopic);
         }
       });
     }
