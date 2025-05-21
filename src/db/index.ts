@@ -28,11 +28,22 @@ export function createPool(): Pool {
   });
 }
 
-export function initialize(dbPool: Pool) {
+export async function initialize(dbPool: Pool) {
   pool = dbPool;
   console.log("Database initialized");
 
   // TODO: Preload topic cache from database
+  // Caching with key as topic_name and value as topic_id
+  try {
+    const res = await pool.query("SELECT topic_name, topic_id FROM topics");
+    for (const row of res.rows) {
+      topicCache.set(row.topic_name, row.topic_id);
+    }
+    console.log("Preloaded topic catch");
+  } catch (err) {
+    console.error("Error reading topics:", err);
+    throw err;
+  }
 }
 
 export async function getTopicId(
