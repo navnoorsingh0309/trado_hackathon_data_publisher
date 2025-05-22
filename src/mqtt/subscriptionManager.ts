@@ -10,6 +10,8 @@ export const isFirstIndexMessage = new Map<string, boolean>();
 
 // To map type for option be it CE and PE
 export const topicTypeMapping = new Map<string, string>();
+const CEToken = new Map<number, string>();
+const PEToken = new Map<number, string>();
 
 // Subscribe to all index topics
 export function subscribeToAllIndices(client: mqtt.MqttClient) {
@@ -49,10 +51,15 @@ export async function subscribeToAtmOptions(
     if (strike <= 0) continue; // ignore invalid strikes
 
     // Fetch tokens for CE and PE
-    const [ceToken, peToken] = await Promise.all([
-      getOptionToken(indexName, strike, "ce"),
-      getOptionToken(indexName, strike, "pe"),
-    ]);
+    let ceToken, peToken;
+    if (!CEToken.has(strike))
+      ceToken = await getOptionToken(indexName, strike, "ce");
+    else
+      ceToken = CEToken.get(strike);
+    if (!PEToken.has(strike))
+      peToken = await getOptionToken(indexName, strike, "pe");
+    else
+      peToken = PEToken.get(strike);
 
     // Avoiding redundancy
     let CEOptionTopic = utils.getOptionTopic(indexName, ceToken!);

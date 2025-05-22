@@ -1,13 +1,18 @@
 import mqtt from "mqtt";
 import * as marketdata from "../proto/market_data_pb";
-import { subscribeToAtmOptions, topicTypeMapping } from "./subscriptionManager";
+import {
+  isFirstIndexMessage,
+  subscribeToAtmOptions,
+  topicTypeMapping,
+} from "./subscriptionManager";
 import { getAtmStrike } from "../utils";
 import { saveToDatabase } from "../db";
+import { INDICES } from "../config";
 
 // Store LTP values for indices
 const indexLtpMap = new Map<string, number>();
 const atmStrikeMap = new Map<string, number>();
-const indices = ["NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY"];
+const indicesOptionsDone = new Map<string, boolean>();
 
 export function processMessage(
   topic: string,
@@ -46,7 +51,6 @@ export function processMessage(
         // Try decoding as JSON
         try {
           decoded = JSON.parse(message.toString());
-          console.log(decoded);
           if (decoded && typeof decoded.ltp === "number") {
             ltpValues.push(decoded.ltp);
           }
@@ -64,10 +68,14 @@ export function processMessage(
       // Process the LTP value
       let indexName = undefined,
         currentAtm = undefined;
-      if (indices.some((index) => topic.includes(index))) {
-        const parts = topic.split("/");
-        indexName = parts[1];
+      const parts = topic.split("/");
+      indexName = parts[1];
+      if (
+        indicesOptionsDone.has(indexName) === false &&
+        INDICES.includes(indexName)
+      ) {
         const prevLtp = indexLtpMap.get(indexName);
+        indicesOptionsDone.set(indexName, true);
         // Optimize our tasks
         if (prevLtp !== ltp) {
           indexLtpMap.set(indexName, ltp);
@@ -76,6 +84,7 @@ export function processMessage(
           currentAtm = getAtmStrike(indexName, ltp);
           if (prevAtm !== currentAtm) {
             atmStrikeMap.set(indexName, currentAtm);
+            console.log("Subscribing");
             subscribeToAtmOptions(client, indexName, currentAtm);
           }
         }
@@ -84,9 +93,15 @@ export function processMessage(
       // 4. Save data to database
       if (!topicTypeMapping.has(topic))
         saveToDatabase(topic, ltp, indexName, undefined, currentAtm);
+      // For specifying type
       else
-        // For specifying type
-        saveToDatabase(topic, ltp, indexName, topicTypeMapping.get(topic), currentAtm);
+        saveToDatabase(
+          topic,
+          ltp,
+          indexName,
+          topicTypeMapping.get(topic),
+          currentAtm
+        );
     }
   } catch (error) {
     console.error("Error processing message:", error);
