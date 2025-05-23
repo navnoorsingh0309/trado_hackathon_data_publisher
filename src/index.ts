@@ -11,7 +11,7 @@ async function start() {
   try {
     // Initialize the database
     const pool = db.createPool();
-    db.initialize(pool);
+    await db.initialize(pool);
 
     // Initialize subscription manager
     subscriptionManager.initializeFirstMessageTracking();

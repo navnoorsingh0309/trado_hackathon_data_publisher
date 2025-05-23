@@ -13,7 +13,7 @@ const indexLtpMap = new Map<string, number>();
 const atmStrikeMap = new Map<string, number>();
 const indicesOptionsDone = new Map<string, boolean>();
 
-export function processMessage(
+export async function processMessage(
   topic: string,
   message: Buffer,
   client: mqtt.MqttClient
@@ -84,15 +84,15 @@ export function processMessage(
           if (prevAtm !== currentAtm) {
             atmStrikeMap.set(indexName, currentAtm);
             console.log("Subscribing");
-            subscribeToAtmOptions(client, indexName, currentAtm);
+            await subscribeToAtmOptions(client, indexName, currentAtm);
           }
         }
-        saveToDatabase(topic, ltp, indexName, undefined, currentAtm);
+        await saveToDatabase(topic, ltp, indexName, undefined, currentAtm);
       }
       else
       // 4. Save data to database
       {
-        saveToDatabase(
+        await saveToDatabase(
           topic,
           ltp,
           optionTopicMapping.get(topic)?.indexName,

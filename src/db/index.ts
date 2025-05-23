@@ -89,7 +89,7 @@ export async function getTopicId(
   }
 }
 
-export function saveToDatabase(
+export async function saveToDatabase(
   topic: string,
   ltp: number,
   indexName?: string,
@@ -107,12 +107,12 @@ export function saveToDatabase(
   });
   // 2. If batch timer is not running, start it
   if (!batchTimer) {
-    batchTimer = setTimeout(() => {
-      flushBatch();
+    batchTimer = setTimeout(async () => {
+      await flushBatch();
     }, config.app.batchInterval);
   }
   // 3. If batch size reaches threshold, flush batch
-  if (dataBatch.length >= config.app.batchSize) flushBatch();
+  if (dataBatch.length >= config.app.batchSize) await flushBatch();
 }
 
 export async function flushBatch() {
