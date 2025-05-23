@@ -89,15 +89,14 @@ export async function processMessage(
         }
         await saveToDatabase(topic, ltp, indexName, undefined, currentAtm);
       }
-      else
       // 4. Save data to database
-      {
+      else {
         await saveToDatabase(
           topic,
           ltp,
           optionTopicMapping.get(topic)?.indexName,
           optionTopicMapping.get(topic)?.type,
-          optionTopicMapping.get(topic)?.strike,
+          optionTopicMapping.get(topic)?.strike
         );
       }
     }

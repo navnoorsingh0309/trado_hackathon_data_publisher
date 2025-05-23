@@ -70,6 +70,11 @@ export async function subscribeToAtmOptions(
     // Avoiding redundancy
     let CEOptionTopic = utils.getOptionTopic(indexName, ceToken!);
     if (ceToken && !activeSubscriptions.has(CEOptionTopic)) {
+      optionTopicMapping.set(CEOptionTopic, {
+        indexName: indexName,
+        type: "CE",
+        strike: strike
+      });
       client.subscribe(CEOptionTopic, (err) => {
         if (err) {
           console.error(
@@ -78,11 +83,6 @@ export async function subscribeToAtmOptions(
           );
         } else {
           activeSubscriptions.add(CEOptionTopic);
-          optionTopicMapping.set(CEOptionTopic, {
-            indexName: indexName,
-            type: "CE",
-            strike: strike
-          });
           console.log(`Added ${CEOptionTopic} for CE`)
         }
       });
@@ -90,6 +90,11 @@ export async function subscribeToAtmOptions(
     // Avoiding redundancy
     let PEOptionTopic = utils.getOptionTopic(indexName, peToken!);
     if (peToken && !activeSubscriptions.has(PEOptionTopic)) {
+      optionTopicMapping.set(PEOptionTopic, {
+        indexName: indexName,
+        type: "PE",
+        strike: strike
+      });
       client.subscribe(utils.getOptionTopic(indexName, peToken), (err) => {
         if (err) {
           console.error(
@@ -98,11 +103,6 @@ export async function subscribeToAtmOptions(
           );
         } else {
           activeSubscriptions.add(PEOptionTopic);
-          optionTopicMapping.set(PEOptionTopic, {
-            indexName: indexName,
-            type: "PE",
-            strike: strike
-          });
           console.log(`Added ${PEOptionTopic} for PE`)
         }
       });
