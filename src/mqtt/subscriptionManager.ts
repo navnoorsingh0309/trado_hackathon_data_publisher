@@ -2,6 +2,12 @@ import mqtt from "mqtt";
 import { config, INDICES, EXPIRY_DATES, STRIKE_RANGE } from "../config";
 import * as utils from "../utils";
 
+interface optionTopicData {
+  indexName: string;
+  type: string;
+  strike: number;
+}
+
 // Set of active subscriptions to avoid duplicates
 export const activeSubscriptions = new Set<string>();
 
@@ -9,9 +15,9 @@ export const activeSubscriptions = new Set<string>();
 export const isFirstIndexMessage = new Map<string, boolean>();
 
 // To map type for option be it CE and PE
-export const topicTypeMapping = new Map<string, string>();
 const CEToken = new Map<number, string>();
 const PEToken = new Map<number, string>();
+export const optionTopicMapping = new Map<string, optionTopicData>();
 
 // Subscribe to all index topics
 export function subscribeToAllIndices(client: mqtt.MqttClient) {
@@ -72,7 +78,11 @@ export async function subscribeToAtmOptions(
           );
         } else {
           activeSubscriptions.add(CEOptionTopic);
-          topicTypeMapping.set(CEOptionTopic, "CE");
+          optionTopicMapping.set(CEOptionTopic, {
+            indexName: indexName,
+            type: "CE",
+            strike: strike
+          });
           console.log(`Added ${CEOptionTopic} for CE`)
         }
       });
@@ -88,7 +98,11 @@ export async function subscribeToAtmOptions(
           );
         } else {
           activeSubscriptions.add(PEOptionTopic);
-          topicTypeMapping.set(PEOptionTopic, "PE");
+          optionTopicMapping.set(PEOptionTopic, {
+            indexName: indexName,
+            type: "PE",
+            strike: strike
+          });
           console.log(`Added ${PEOptionTopic} for PE`)
         }
       });

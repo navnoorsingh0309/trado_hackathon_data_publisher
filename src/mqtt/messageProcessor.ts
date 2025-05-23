@@ -1,11 +1,10 @@
 import mqtt from "mqtt";
 import * as marketdata from "../proto/market_data_pb";
 import {
-  isFirstIndexMessage,
+  optionTopicMapping,
   subscribeToAtmOptions,
-  topicTypeMapping,
 } from "./subscriptionManager";
-import { getAtmStrike } from "../utils";
+import { getAtmStrike, getOptionTopic } from "../utils";
 import { saveToDatabase } from "../db";
 import { INDICES } from "../config";
 
@@ -88,20 +87,19 @@ export function processMessage(
             subscribeToAtmOptions(client, indexName, currentAtm);
           }
         }
-      }
-
-      // 4. Save data to database
-      if (!topicTypeMapping.has(topic))
         saveToDatabase(topic, ltp, indexName, undefined, currentAtm);
-      // For specifying type
+      }
       else
+      // 4. Save data to database
+      {
         saveToDatabase(
           topic,
           ltp,
-          indexName,
-          topicTypeMapping.get(topic),
-          currentAtm
+          optionTopicMapping.get(topic)?.indexName,
+          optionTopicMapping.get(topic)?.type,
+          optionTopicMapping.get(topic)?.strike,
         );
+      }
     }
   } catch (error) {
     console.error("Error processing message:", error);
